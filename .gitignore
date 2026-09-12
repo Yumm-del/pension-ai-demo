@@ -1,0 +1,14 @@
+# Python 缓存
+__pycache__/
+*.pyc
+
+# Office 临时文件
+~$*
+
+# 演示视频源文件与 PPT（体积大，不纳入仓库）
+*.pptx
+*.mp4
+*.webm
+
+# 密钥（防止未来 API Key 误提交）
+.streamlit/secrets.toml

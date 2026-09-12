@@ -1,0 +1,368 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>工银智养仓 · 路演答辩</title>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/reveal.js/5.0.4/reset.min.css">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/reveal.js/5.0.4/reveal.min.css">
+<style>
+:root {
+  --blue: #1e40af; --gold: #f59e0b; --dark: #0f172a; --card: #1e293b;
+  --text: #e2e8f0; --muted: #94a3b8; --green: #10b981; --red: #ef4444;
+}
+.reveal { background: var(--dark); }
+.reveal .slides section {
+  font-family: "Microsoft YaHei","PingFang SC",sans-serif; color: var(--text);
+  padding: 2rem 4rem; text-align: left; height: 100%;
+}
+.reveal h1 { font-size: 2.8rem; color: #fff; font-weight: 700; margin-bottom: 0.3rem; }
+.reveal h2 { font-size: 2rem; color: #fff; font-weight: 700; margin-bottom: 0.5rem; }
+.reveal h3 { font-size: 1.3rem; color: var(--text); font-weight: 600; }
+.reveal p, .reveal li { font-size: 1.1rem; line-height: 1.7; color: var(--text); }
+.reveal .subtitle { color: var(--muted); font-size: 1rem; margin-bottom: 1.5rem; }
+.reveal .gold { color: var(--gold); }
+.reveal .muted { color: var(--muted); }
+.reveal .small { font-size: 0.85rem; }
+.cover { text-align: center !important; padding-top: 4rem !important; }
+.cover h1 { font-size: 3.5rem; margin-bottom: 0.5rem; }
+.cover .tagline { font-size: 1.4rem; color: var(--gold); margin: 1rem 0; }
+.cover .info { font-size: 1rem; color: var(--muted); margin-top: 2rem; }
+.cards { display: flex; gap: 1.2rem; margin: 1rem 0; }
+.card { flex: 1; background: var(--card); border-radius: 12px; padding: 1.5rem; border-top: 3px solid var(--blue); }
+.card.gold-border { border-top-color: var(--gold); }
+.card.green-border { border-top-color: var(--green); }
+.card h3 { font-size: 1rem; margin: 0 0 0.5rem 0; }
+.card .card-body { font-size: 0.95rem; color: var(--muted); line-height: 1.6; }
+.card .number { font-size: 2.5rem; font-weight: 700; color: #fff; }
+.card .unit { font-size: 0.9rem; color: var(--muted); }
+.stat-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1rem; margin: 1rem 0; }
+.stat-card { background: var(--card); border-radius: 10px; padding: 1.2rem; text-align: center; }
+.stat-card .num { font-size: 2.2rem; font-weight: 700; }
+.stat-card .num.blue { color: #60a5fa; }
+.stat-card .num.gold { color: var(--gold); }
+.stat-card .num.green { color: #34d399; }
+.stat-card .lbl { font-size: 0.85rem; color: var(--muted); margin-top: 0.3rem; }
+.two-col { display: flex; gap: 2rem; }
+.two-col > div { flex: 1; }
+.flow-row { display: flex; gap: 1rem; align-items: center; margin: 1.5rem 0; }
+.flow-step { flex: 1; background: var(--card); border-radius: 12px; padding: 1.5rem; text-align: center; border-top: 3px solid var(--blue); }
+.flow-arrow { font-size: 2rem; color: var(--gold); flex: 0 0 auto; }
+.tag { display: inline-block; padding: 0.15rem 0.6rem; border-radius: 20px; font-size: 0.8rem; font-weight: 600; }
+.tag-blue { background: #1e3a5f; color: #93c5fd; }
+.tag-gold { background: #78350f; color: #fde68a; }
+.tag-green { background: #14532d; color: #86efac; }
+.check-list { list-style: none; padding: 0; }
+.check-list li { padding: 0.4rem 0; font-size: 1rem; }
+.check-list li::before { margin-right: 0.5rem; }
+.check-pass::before { content: "✅"; }
+.check-warn::before { content: "⚠️"; }
+.check-fail::before { content: "❌"; }
+.policy-table { width: 100%; border-collapse: collapse; margin: 1rem 0; font-size: 0.9rem; }
+.policy-table th { background: var(--blue); color: #fff; padding: 0.5rem; text-align: left; }
+.policy-table td { padding: 0.5rem; border-bottom: 1px solid #334155; }
+.policy-table .highlight { background: #1e3a5f; font-weight: 700; }
+.system-map { display: flex; flex-direction: column; gap: 0.4rem; margin: 1rem 0; }
+.system-row { display: flex; gap: 1rem; align-items: center; }
+.system-from { flex: 1; background: var(--card); padding: 0.5rem 1rem; border-radius: 6px; color: var(--muted); font-size: 0.9rem; }
+.system-to { flex: 1; background: #1e3a5f; padding: 0.5rem 1rem; border-radius: 6px; color: var(--gold); font-weight: 600; font-size: 0.9rem; }
+.end-slide { text-align: center !important; padding-top: 4rem !important; }
+.end-slide h1 { font-size: 3rem; }
+.end-slide .slogan { font-size: 1.5rem; color: var(--gold); margin: 1.5rem 0; }
+</style>
+</head>
+<body>
+<div class="reveal"><div class="slides">
+
+<!-- Slide 1: 封面 -->
+<section class="cover">
+  <h1>工银智养仓</h1>
+  <div class="tagline">AI驱动个人养老金全生命周期合规运营平台</div>
+  <p style="font-size:1.2rem;color:var(--text);margin-top:1rem;">让3500万账户，从「睡」到「醒」</p>
+  <div class="info">
+    第17届「工行杯」全国大学生金融科技创新大赛<br>
+    吕滢滢 &nbsp;|&nbsp; 广东金融学院 &nbsp;|&nbsp; 金融科技
+  </div>
+</section>
+
+<!-- Slide 2: 一个客户经理的日常 -->
+<section>
+  <h2>一个客户经理的日常</h2>
+  <p class="subtitle">李经理，工行某支行，管着847个养老金客户</p>
+  <div class="cards">
+    <div class="card"><h3>😰 她的KPI</h3><div class="card-body">本周需激活<strong style="color:var(--gold)">30个</strong>沉睡账户</div></div>
+    <div class="card"><h3>📊 她的工具</h3><div class="card-body">Excel表格 · 群发短信模板 · 电话外呼</div></div>
+    <div class="card"><h3>📉 今天的结果</h3><div class="card-body">打了<strong style="color:var(--red)">43通电话</strong> → 转化<strong style="color:var(--green)">1个</strong></div></div>
+    <div class="card gold-border"><h3>⚠️ 最大的焦虑</h3><div class="card-body">「新规说不能乱推产品。<br>但KPI又压在我头上。」</div></div>
+  </div>
+</section>
+
+<!-- Slide 3: 三类客户，同一个短信 -->
+<section>
+  <h2>三类客户，同一个短信</h2>
+  <p class="subtitle">当前做法：群发「个人养老金缴存享税收优惠，最高省税5400元」</p>
+  <div class="cards">
+    <div class="card">
+      <span class="tag tag-blue">~61% 不会投</span>
+      <h3 style="margin-top:0.5rem;">26岁小陈</h3>
+      <div class="card-body">「啥是个人养老金？」→ <span style="color:var(--muted)">忽略</span></div>
+    </div>
+    <div class="card gold-border">
+      <span class="tag tag-gold">~34% 不敢投</span>
+      <h3 style="margin-top:0.5rem;">48岁张先生</h3>
+      <div class="card-body">「又推销，钱锁到退休取不出来」→ <span style="color:var(--red)">反感</span></div>
+    </div>
+    <div class="card green-border">
+      <span class="tag tag-green">~30% 懒得投</span>
+      <h3 style="margin-top:0.5rem;">32岁王女士</h3>
+      <div class="card-body">领了立减金 → <span style="color:var(--muted)">没后续</span></div>
+    </div>
+  </div>
+  <p style="text-align:center;margin-top:1.5rem;font-size:1.3rem;color:var(--gold);font-weight:700;">
+    三类人，同一个短信 → 转化率不足3%
+  </p>
+</section>
+
+<!-- Slide 4: 新规 -->
+<section>
+  <h2>更大的问题——新规来了</h2>
+  <p class="subtitle">2026年2月1日 《金融机构产品适当性管理办法》正式施行</p>
+  <div class="two-col">
+    <div>
+      <ul class="check-list" style="font-size:1.1rem;line-height:2.2;">
+        <li class="check-fail">禁止无差别推介</li>
+        <li class="check-fail">禁止向超风险客户主动推介</li>
+        <li class="check-warn">65岁以上客户需特别注意义务</li>
+        <li class="check-fail">所有营销推介必须全流程可回溯</li>
+      </ul>
+      <p style="margin-top:1rem;color:var(--red);font-size:1.2rem;">「群发短信推产品」 — 不再合规<br>「打电话盲推理财」 — 不再合规</p>
+    </div>
+    <div>
+      <div style="background:var(--card);border-radius:12px;padding:1.5rem;text-align:center;">
+        <p style="font-size:1.2rem;">激活养老金这件事</p>
+        <p style="font-size:1.5rem;color:var(--gold);font-weight:700;">从运营问题变成了合规问题</p>
+        <hr style="border-color:#334155;margin:1.5rem 0;">
+        <p style="font-size:0.95rem;color:var(--muted);">另一方面：2026年6月<br><span style="color:var(--gold);">储蓄国债纳入个人养老金</span><br>→ 对中低风险客户形成强抓手</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Slide 5: 产品核心 -->
+<section>
+  <h2>工银智养仓：AI驱动的合规激活</h2>
+  <p class="subtitle">核心逻辑：不是群发，是读懂每一个人</p>
+  <div class="flow-row">
+    <div class="flow-step">
+      <div style="font-size:2rem;">①</div>
+      <h3>AI客户分型引擎</h3>
+      <div class="card-body">五维数据 →<br>不会投 / 不敢投 / 懒得投</div>
+    </div>
+    <div class="flow-arrow">→</div>
+    <div class="flow-step">
+      <div style="font-size:2rem;">②</div>
+      <h3>合规内容工场</h3>
+      <div class="card-body">千人千面生成<br>合规激活内容</div>
+    </div>
+    <div class="flow-arrow">→</div>
+    <div class="flow-step">
+      <div style="font-size:2rem;">③</div>
+      <h3>客户经理工作台</h3>
+      <div class="card-body">优先级排序<br>合规话术 + 效果追踪</div>
+    </div>
+  </div>
+  <p style="text-align:center;color:var(--muted);margin-top:1.5rem;">同一套AI引擎 → C端手机银行AI顾问入口</p>
+</section>
+
+<!-- Slide 6: 张先生案例 -->
+<section>
+  <h2>一个具体例子：48岁的张先生</h2>
+  <div class="two-col">
+    <div class="card">
+      <h3>📋 客户画像</h3>
+      <div class="card-body">
+        <p>账户状态：<strong>开户6个月，未缴存</strong></p>
+        <p>持有资产：工行定期存款<strong style="color:var(--gold)">50万</strong></p>
+        <p>AI分型：<span class="tag tag-gold">不敢投</span></p>
+        <p>原因：曾买基金亏损过，怕了</p>
+      </div>
+    </div>
+    <div class="card gold-border">
+      <h3>🤖 AI推荐策略</h3>
+      <div class="card-body">
+        <p>① 不推偏股型养老基金<em class="muted">（合规红线）</em></p>
+        <p>② 推送6月即将上线的<strong style="color:var(--gold)">储蓄国债</strong>信息</p>
+        <p>③ 话术：「国家信用担保，与定期一样安全，利率更高」</p>
+        <p style="margin-top:1rem;color:var(--green);font-weight:700;">结果：首次缴存5000元，定投国债产品</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Slide 7: 合规设计 -->
+<section>
+  <h2>合规不是束缚，是产品设计的起点</h2>
+  <div class="two-col">
+    <div class="card">
+      <h3>🔒 分级锁定机制</h3>
+      <div class="card-body">
+        <p><strong style="color:var(--red)">强制锁定区</strong>（不可编辑）<br>风险提示语句 · 产品匹配依据 · 65+保护声明</p>
+        <p style="margin-top:1rem;"><strong style="color:var(--green)">可编辑区</strong>（客户经理可修改）<br>问候语 · 个性化关怀</p>
+      </div>
+    </div>
+    <div class="card">
+      <h3>📋 全量留痕</h3>
+      <div class="card-body">
+        <p>原始AI版本 + 客户经理修改版本 + 实际发送版本</p>
+        <p style="color:var(--green);margin-top:1rem;">三者完整存档，满足可回溯要求</p>
+      </div>
+    </div>
+  </div>
+  <div class="card" style="margin-top:1.5rem;">
+    <h3>👴 适老化自动切换</h3>
+    <div class="card-body" style="display:flex;gap:1rem;text-align:center;">
+      <div style="flex:1;padding:0.5rem;background:#1e3a5f;border-radius:8px;">&lt;55岁<br>标准界面</div>
+      <div style="flex:1;padding:0.5rem;background:#78350f;border-radius:8px;">55-64岁<br>大字体+语音</div>
+      <div style="flex:1;padding:0.5rem;background:#7f1d1d;border-radius:8px;">≥65岁<br>风险提示强化</div>
+    </div>
+  </div>
+</section>
+
+<!-- Slide 8: 系统对接 -->
+<section>
+  <h2>不是另起炉灶，是嵌入现有生态</h2>
+  <p class="subtitle">五个模块全部对接工行现有系统，零改造</p>
+  <div class="system-map">
+    <div class="system-row">
+      <div class="system-from">客户画像平台</div><span style="color:var(--gold);">→</span><div class="system-to">客户分型引擎</div>
+    </div>
+    <div class="system-row">
+      <div class="system-from">营销触达系统</div><span style="color:var(--gold);">→</span><div class="system-to">合规内容输出</div>
+    </div>
+    <div class="system-row">
+      <div class="system-from">产品信息库</div><span style="color:var(--gold);">→</span><div class="system-to">合规知识库</div>
+    </div>
+    <div class="system-row">
+      <div class="system-from">客户经理CRM</div><span style="color:var(--gold);">→</span><div class="system-to">运营工作台</div>
+    </div>
+    <div class="system-row">
+      <div class="system-from">手机银行</div><span style="color:var(--gold);">→</span><div class="system-to">C端AI顾问</div>
+    </div>
+  </div>
+  <p style="text-align:center;margin-top:1rem;"><span class="gold">成本：百万级 &nbsp;·&nbsp; 回报：千万级 &nbsp;·&nbsp; 投入产出比 1:10</span></p>
+</section>
+
+<!-- Slide 9: 落地路径 -->
+<section>
+  <h2>落地路径</h2>
+  <div class="flow-row">
+    <div class="flow-step">
+      <div style="font-size:1.5rem;">📅</div>
+      <h3>Phase 1</h3>
+      <div class="card-body">灰度试点<strong style="color:var(--gold)">3个月</strong><br>1-2家分行<br>跑通全链路</div>
+    </div>
+    <div class="flow-arrow">→</div>
+    <div class="flow-step">
+      <div style="font-size:1.5rem;">🚀</div>
+      <h3>Phase 2</h3>
+      <div class="card-body">全行推广<strong style="color:var(--gold)">6个月</strong><br>全国CRM+手机银行<br>客户经理培训</div>
+    </div>
+    <div class="flow-arrow">→</div>
+    <div class="flow-step">
+      <div style="font-size:1.5rem;">🌐</div>
+      <h3>Phase 3</h3>
+      <div class="card-body">能力延伸<strong style="color:var(--gold)">12个月+</strong><br>企业年金+社保<br>大湾区跨境养老</div>
+    </div>
+  </div>
+</section>
+
+<!-- Slide 10: 量化价值 -->
+<section>
+  <h2>量化价值 · 6个月预期成效</h2>
+  <div class="stat-grid">
+    <div class="stat-card"><div class="num blue">+15%</div><div class="lbl">沉睡账户活跃度</div></div>
+    <div class="stat-card"><div class="num gold">+5pp</div><div class="lbl">缴存转化率</div></div>
+    <div class="stat-card"><div class="num green">+400%</div><div class="lbl">客户经理识别效率</div></div>
+    <div class="stat-card"><div class="num blue">50-80户</div><div class="lbl">客户经理日均有效触达</div></div>
+    <div class="stat-card"><div class="num gold">+30%</div><div class="lbl">户均缴存金额</div></div>
+    <div class="stat-card"><div class="num green">100%</div><div class="lbl">AI合规审核覆盖率</div></div>
+  </div>
+</section>
+
+<!-- Slide 11: 创新亮点 -->
+<section>
+  <h2>四大创新亮点</h2>
+  <div class="cards">
+    <div class="card gold-border">
+      <h3>① 合规驱动</h3>
+      <div class="card-body">以2026年2月新规为设计起点，紧扣行业最新监管要求</div>
+    </div>
+    <div class="card">
+      <h3>② 休眠成因分型</h3>
+      <div class="card-body">不是分人群，是分「不激活的真实原因」</div>
+    </div>
+    <div class="card">
+      <h3>③ B端C端双轮</h3>
+      <div class="card-body">同一套AI引擎服务两端</div>
+    </div>
+    <div class="card">
+      <h3>④ 可复制架构</h3>
+      <div class="card-body">分型引擎可平移至企业年金、社保卡等场景</div>
+    </div>
+  </div>
+</section>
+
+<!-- Slide 12: 为什么是我 -->
+<section>
+  <h2>为什么是我</h2>
+  <div class="two-col">
+    <div class="card">
+      <h3>👤 吕滢滢</h3>
+      <div class="card-body">
+        <p>广东金融学院 · 金融科技</p>
+        <p>个人参赛</p>
+        <p style="margin-top:1rem;">已独立完成AI金融分析Agent项目</p>
+        <p class="small muted">DeepSeek API 集成 · 合规知识库设计 · Prompt工程 · Streamlit开发</p>
+      </div>
+    </div>
+    <div class="card gold-border">
+      <h3>🔗 技术验证</h3>
+      <div class="card-body">
+        <p>本项目核心技术链路均在既往项目中得到工程验证</p>
+        <p class="small muted" style="margin-top:1rem;">github.com/Yumm-del/fin-analyzer</p>
+        <p style="margin-top:1rem;color:var(--gold);">不是「想象中能做」<br>是「已经验证过能做」</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Slide 13: 结尾 -->
+<section class="end-slide">
+  <h1>谢谢各位评委老师</h1>
+  <div class="slogan">工银智养仓</div>
+  <p style="font-size:1.3rem;color:var(--text);">让3500万账户，从「睡」到「醒」</p>
+  <p class="small muted" style="margin-top:3rem;">y15807546118@icloud.com &nbsp;|&nbsp; 广东金融学院 · 金融科技</p>
+</section>
+
+<!-- Slide 14: 备用 -->
+<section>
+  <h2>Q&A 预案（备用）</h2>
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;">
+    <div class="card"><h3 style="color:var(--gold)">CRM没行为数据？</h3><div class="card-body">存量数据复用 + 养老金专区埋点补全 + 企微H5触达</div></div>
+    <div class="card"><h3 style="color:var(--gold)">改AI话术违规？</h3><div class="card-body">分级锁定：合规红线不可编辑 + 三版本留痕</div></div>
+    <div class="card"><h3 style="color:var(--gold)">睡眠户不开APP？</h3><div class="card-body">三阶段漏斗：B端外呼 → H5轻交互 → C端激活</div></div>
+    <div class="card"><h3 style="color:var(--gold)">跟AI问答的区别？</h3><div class="card-body">通用工具无账户数据。我们是嵌入工行系统的合规运营工具</div></div>
+  </div>
+</section>
+
+</div></div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/reveal.js/5.0.4/reveal.min.js"></script>
+<script>
+Reveal.initialize({
+  hash: true, width: 1280, height: 720, margin: 0.05,
+  transition: 'fade', transitionSpeed: 'fast',
+  controls: true, progress: true, center: false,
+});
+</script>
+</body>
+</html>
