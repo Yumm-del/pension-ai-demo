@@ -423,15 +423,18 @@ def render_library(pool, tasks):
     query = st.text_input("搜索客户编号或姓名")
     filtered = [c for c in pool if (dtype == "全部" or classify(c)[0] == dtype)
                 and (not query or query.strip() in c["id"] or query.strip() in c["name"])]
-    st.caption(f"共 {len(filtered)} 位模拟客户")
+    st.caption(f"共 {len(filtered)} 位模拟客户"
+               + ("（已按条件筛选）" if (dtype != "全部" or query) else "（全部）"))
+    if not filtered:
+        st.info("当前筛选条件下没有匹配的客户。可清空搜索词或把「原因筛选」改回「全部」查看 200 位模拟客户。")
+        return
     st.dataframe([{"客户ID": c["id"], "姓名": c["name"], "原因": classify(c)[0],
                    "证据状态": EVIDENCE_LEVELS[classify(c)[1]], "任务状态": task_queue(c, tasks),
                    "最近联系": c["last_contact"]} for c in filtered], hide_index=True, use_container_width=True)
-    if filtered:
-        customer = select_customer(filtered, "library_picker")
-        show_profile(customer)
-        if st.button("处理当前客户 →"):
-            go("🤖 AI策略工场", customer["id"])
+    customer = select_customer(filtered, "library_picker")
+    show_profile(customer)
+    if st.button("查看该客户的话术与任务 →"):
+        go("🤖 AI策略工场", customer["id"])
 
 
 def render_compliance(tasks):
