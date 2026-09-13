@@ -503,19 +503,32 @@ if page == "📊 运营看板":
 
     # 所有首页数值均从当前200位模拟客户画像实时计算，不映射真实业务规模。
     total = len(pool)
-    dormant = sum(1 for customer in pool if customer["days_inactive"] >= 180)
-    activated_week = 0
-    conversion = 0.0
+    # 沉睡定义：180 天无养老金相关操作（与卡片文案、图注口径保持一致）
+    dormant_pool = [c for c in pool if c["days_inactive"] >= 180]
+    dormant = len(dormant_pool)
+    # 本周激活记录：按沉睡客群模拟——本周触达的沉睡客户数（演示数据）
+    contacted_this_week = sum(1 for c in dormant_pool if c["last_contact"] == "30天前")
+    activated_week = contacted_this_week
+    # 试点转化率（模拟）：触达后完成缴存的比例，演示取值 20%
+    converted = round(contacted_this_week * 0.2)
+    conversion = (converted / contacted_this_week) if contacted_this_week else 0.0
 
     c1, c2, c3, c4 = st.columns(4)
     with c1:
         st.markdown(f'<div class="card-blue"><div class="big-num">{total:,}</div><div style="font-size:0.85rem;opacity:0.85;">模拟客户画像</div></div>', unsafe_allow_html=True)
     with c2:
-        st.markdown(f'<div class="card"><div class="big-num" style="color:#9d0009;">{dormant:,}</div><div style="font-size:0.85rem;color:#6b7280;">沉睡账户（>3月未动）</div></div>', unsafe_allow_html=True)
+        st.markdown(f'<div class="card"><div class="big-num" style="color:#9d0009;">{dormant:,}</div><div style="font-size:0.85rem;color:#6b7280;">沉睡账户（180 天未动）</div></div>', unsafe_allow_html=True)
     with c3:
-        st.markdown(f'<div class="card-green"><div class="big-num">+{activated_week}</div><div style="font-size:0.85rem;opacity:0.85;">本周激活记录（待试点）</div></div>', unsafe_allow_html=True)
+        st.markdown(f'<div class="card-green"><div class="big-num">+{activated_week}</div><div style="font-size:0.85rem;opacity:0.85;">本周触达记录（模拟）</div></div>', unsafe_allow_html=True)
     with c4:
-        st.markdown(f'<div class="card-gold"><div class="big-num">{conversion:.0%}</div><div style="font-size:0.85rem;opacity:0.85;">试点转化率（待数据）</div></div>', unsafe_allow_html=True)
+        st.markdown(f'<div class="card-gold"><div class="big-num">{conversion:.0%}</div><div style="font-size:0.85rem;opacity:0.85;">触达转化率（模拟）</div></div>', unsafe_allow_html=True)
+
+    st.caption(
+        "指标口径：**沉睡账户**＝180 天无养老金相关操作；"
+        "**本周触达记录**＝本周通过任一渠道联系到的沉睡客户数；"
+        "**触达转化率**＝触达后完成缴存的比例。"
+        "以上均为模拟脱敏数据的演示值，正式试点将按统一口径由系统日志自动取数。"
+    )
 
     st.divider()
 
@@ -524,8 +537,9 @@ if page == "📊 运营看板":
 
     with col_left:
         st.markdown("#### 客户休眠原因分布")
+        # 只统计沉睡客群（与上方"沉睡账户"卡片同一口径，避免总数矛盾）
         type_counts = {"不会投": 0, "不敢投": 0, "懒得投": 0}
-        for c in pool:
+        for c in dormant_pool:
             r = rule_based_classify(c)
             type_counts[r[0][0]] += 1
 
@@ -547,10 +561,10 @@ if page == "📊 运营看板":
         )
         distribution_labels = distribution_chart.mark_text(align="left", baseline="middle", dx=7, color="#262626", fontSize=12).encode(text="客户数:Q")
         st.altair_chart(distribution_chart + distribution_labels, use_container_width=True)
-        st.caption("基于200位模拟、脱敏客户画像的分型分布，仅用于原型展示。")
+        st.caption(f"基于 {dormant} 位沉睡客户（180 天未动）的模拟分型分布，与上方「沉睡账户」口径一致；仅用于原型展示。")
 
     with col_right:
-        st.markdown("#### 试点趋势示意（模拟）")
+        st.markdown("#### 本周触达趋势示意（模拟）")
         trend = pd.DataFrame({
             "周一": [12], "周二": [18], "周三": [15], "周四": [22], "周五": [23], "周六": [17], "周日": [9],
         })
