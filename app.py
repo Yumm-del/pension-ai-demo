@@ -227,6 +227,87 @@ FALLBACK_STRATEGIES = {
 合规：不使用收益承诺；产品匹配与最终触达均须经过适当性与合规审核""",
 }
 
+
+# ============================================================
+# 渠道版本生成：同一策略 → 四个渠道内容
+# 全部按分型 + 客户画像生成；用词受合规约束（不含保本/稳赚/收益承诺）
+# ============================================================
+# 每个分型的沟通切入点（渠道版本共用的内容内核）
+CHANNEL_CORE = {
+    "不会投": {
+        "hook": "个人养老金怎么参与、和自己有什么关系",
+        "value": "把制度规则讲清楚：谁能参加、账户怎么用、领取条件是什么",
+        "probe": "您对个人养老金制度了解多少？",
+    },
+    "不敢投": {
+        "hook": "账户资金的安全性和流动性安排",
+        "value": "说明资金封闭管理、领取条件与产品风险等级的关系",
+        "probe": "您主要顾虑的是资金期限，还是产品波动？",
+    },
+    "懒得投": {
+        "hook": "今年能省多少税，一分钟算清楚",
+        "value": "用税优测算展示缴存与节税的关系，降低首次行动门槛",
+        "probe": "要不要我发您一个税优测算入口，先看看自己能省多少？",
+    },
+}
+
+
+def build_channel_versions(customer: dict, dormancy_type: str) -> dict:
+    """按客户画像与分型生成四个渠道版本（模板化，无 API 时也完整可用）
+    返回：{'企微': 全文, '短信': ≤70字, '推送标题': 标题, '推送正文': 正文, '电话': 通话脚本}
+    合规约束：不出现保本/稳赚/保证收益/限时等表述；不含产品推荐；均需人工审核后发送。
+    """
+    core = CHANNEL_CORE.get(dormancy_type, CHANNEL_CORE["不会投"])
+    name = customer.get("name", "客户")
+    age = customer.get("age", 35)
+    # 称呼：拆出姓氏与称谓，拼成"王女士/王先生"（照搬全名在短信里占字数）
+    raw = name.replace("先生", "|先生").replace("女士", "|女士").replace("小姐", "|小姐")
+    if "|" in raw:
+        surname, title = raw.split("|", 1)
+        call = f"{surname}{title}"       # 如"王女士"
+    else:
+        call = name or "您"
+
+    # ---------- 企微话术版（完整，一对一沟通） ----------
+    wecom = (
+        f"{call}您好，我是您的养老金服务专员。\n"
+        f"了解到您还没开始缴存个人养老金，想和您简单介绍一下——{core['hook']}。\n"
+        f"{core['value']}。\n"
+        f"{core['probe']}"
+    )
+
+    # ---------- 短信浓缩版（≤70 字） ----------
+    sms = f"【工行】{call}您好，个人养老金缴存可享个税抵扣，{core['hook']}。回复1获取规则解读。"
+    if len(sms) > 70:   # 超长则进一步压缩
+        sms = f"【工行】{call}您好，个人养老金可享个税抵扣，回复1了解规则。"
+
+    # ---------- APP 推送版（标题 ≤14 字，正文 ≤50 字） ----------
+    push_titles = {
+        "不会投": "个人养老金怎么参与",
+        "不敢投": "您的养老账户说明",
+        "懒得投": "今年能省多少税？",
+    }
+    push_bodies = {
+        "不会投": "一图看懂参加条件、账户使用与领取规则，先了解再决定。",
+        "不敢投": "资金封闭期、领取条件与风险等级，一文说清常见顾虑。",
+        "懒得投": "输入月薪与缴存额，一分钟算出您的节税金额。",
+    }
+    title = push_titles.get(dormancy_type, "个人养老金服务")
+    body = push_bodies.get(dormancy_type, "了解规则与自身适配条件，自主决策。")
+
+    # ---------- 电话话术版（含合规提示） ----------
+    phone = (
+        f"【开场】{call}您好，我是工行的养老金服务专员，占用您两分钟，"
+        f"关于您的个人养老金账户有个服务提醒。\n"
+        f"【切入】{core['probe']}\n"
+        f"【说明】{core['value']}。\n"
+        f"【合规提示】以上内容为规则解读，不构成投资建议；"
+        f"如需了解具体产品，需先完成风险测评并由经办人员说明。\n"
+        f"【收尾】我把规则解读发到您的手机银行消息里，您方便时看一下。"
+    )
+
+    return {"企微": wecom, "短信": sms, "推送标题": title, "推送正文": body, "电话": phone}
+
 # ============================================================
 # 样式
 # ============================================================
@@ -628,11 +709,56 @@ elif page == "🤖 AI策略工场":
 
             st.divider()
             st.markdown("#### 候选渠道版本")
-            ch1, ch2, ch3, ch4 = st.columns(4)
-            with ch1: st.markdown('<div class="card" style="text-align:center;font-size:0.9rem;">📱 企微话术版<br><span style="color:#6b7280;font-size:0.8rem;">一键复制</span></div>', unsafe_allow_html=True)
-            with ch2: st.markdown('<div class="card" style="text-align:center;font-size:0.9rem;">💬 短信浓缩版<br><span style="color:#6b7280;font-size:0.8rem;">70字内</span></div>', unsafe_allow_html=True)
-            with ch3: st.markdown('<div class="card" style="text-align:center;font-size:0.9rem;">🔔 APP推送版<br><span style="color:#6b7280;font-size:0.8rem;">图文卡片</span></div>', unsafe_allow_html=True)
-            with ch4: st.markdown('<div class="card" style="text-align:center;font-size:0.9rem;">📞 电话话术版<br><span style="color:#6b7280;font-size:0.8rem;">含合规提示</span></div>', unsafe_allow_html=True)
+            st.caption("同一策略按渠道特性生成四个版本，内容均由上方分型结果与客户画像生成；发送前须经人工审核。")
+            versions = build_channel_versions(customer, top_type)
+
+            vc1, vc2, vc3, vc4 = st.columns(4)
+            with vc1: st.markdown('<div class="card" style="text-align:center;font-size:0.9rem;">📱 企微话术版<br><span style="color:#6b7280;font-size:0.8rem;">一键复制</span></div>', unsafe_allow_html=True)
+            with vc2: st.markdown('<div class="card" style="text-align:center;font-size:0.9rem;">💬 短信浓缩版<br><span style="color:#6b7280;font-size:0.8rem;">70字内</span></div>', unsafe_allow_html=True)
+            with vc3: st.markdown('<div class="card" style="text-align:center;font-size:0.9rem;">🔔 APP推送版<br><span style="color:#6b7280;font-size:0.8rem;">图文卡片</span></div>', unsafe_allow_html=True)
+            with vc4: st.markdown('<div class="card" style="text-align:center;font-size:0.9rem;">📞 电话话术版<br><span style="color:#6b7280;font-size:0.8rem;">含合规提示</span></div>', unsafe_allow_html=True)
+
+            # ---------- 企微话术版 ----------
+            with st.expander("📱 企微话术版（完整版，适宜一对一沟通）", expanded=False):
+                st.markdown(f'<div class="strategy-line">{versions["企微"]}</div>', unsafe_allow_html=True)
+                st.caption("可编辑字段：称呼、问候语、预约时间｜锁定字段：风险提示、适当性结论、免责声明")
+                st.code(versions["企微"], language=None)   # 提供一键复制区域
+
+            # ---------- 短信浓缩版 ----------
+            with st.expander("💬 短信浓缩版（70 字内）", expanded=False):
+                sms = versions["短信"]
+                st.markdown(f'<div class="strategy-line">{sms}</div>', unsafe_allow_html=True)
+                n = len(sms)
+                (st.success if n <= 70 else st.warning)(f"当前字数：{n} 字（含标点）")
+
+            # ---------- APP 推送版（图文卡片） ----------
+            with st.expander("🔔 APP 推送版（图文卡片预览）", expanded=False):
+                st.markdown(f"""
+                <div style="max-width:420px;border:1px solid #e5e7eb;border-radius:14px;overflow:hidden;box-shadow:0 2px 10px rgba(0,0,0,0.06);">
+                  <div style="background:linear-gradient(135deg,#c7000b,#e23b3b);color:#fff;padding:14px 16px;">
+                    <div style="font-size:1.05rem;font-weight:700;">{versions['推送标题']}</div>
+                    <div style="font-size:0.78rem;opacity:0.9;margin-top:2px;">中国工商银行 · 个人养老金专区</div>
+                  </div>
+                  <div style="padding:14px 16px;background:#fff;">
+                    <div style="font-size:0.9rem;color:#374151;line-height:1.6;">{versions['推送正文']}</div>
+                    <div style="margin-top:12px;display:flex;gap:8px;">
+                      <span style="background:#c7000b;color:#fff;border-radius:8px;padding:6px 16px;font-size:0.85rem;">去了解</span>
+                      <span style="border:1px solid #d1d5db;color:#6b7280;border-radius:8px;padding:6px 16px;font-size:0.85rem;">暂不提醒</span>
+                    </div>
+                  </div>
+                  <div style="background:#f9fafb;color:#9ca3af;font-size:0.72rem;padding:8px 16px;">
+                    本内容为规则与政策解读，不构成投资建议
+                  </div>
+                </div>
+                """, unsafe_allow_html=True)
+                st.caption("推送卡片由策略内容自动生成：标题 ≤ 14 字，正文 ≤ 50 字，底部固定合规声明。")
+
+            # ---------- 电话话术版 ----------
+            with st.expander("📞 电话话术版（含合规提示）", expanded=False):
+                for seg in versions["电话"].split("\n"):
+                    if seg.strip():
+                        st.markdown(f'<div class="strategy-line">{seg}</div>', unsafe_allow_html=True)
+                st.warning("电话沟通须在客户已同意触达的前提下进行；客户明确拒绝时立即终止并记录，不得重复拨打。")
 
 # ============================================================
 # 页面4：批量激活任务
@@ -694,20 +820,24 @@ elif page == "批量任务":
 
         st.divider()
         st.markdown("#### 触达结果回填（模拟）")
-        feedback_customer = st.selectbox("选择需回填结果的客户", [row["客户"] for row in results], key="feedback_customer")
-        feedback_status = st.radio(
-            "模拟触达结果",
-            ["已阅读，暂未响应", "主动咨询，转人工服务", "明确暂不参与", "完成缴存，进入长期服务"],
-            horizontal=True,
-            key="feedback_status",
+        st.caption(
+            "客户经理完成触达后，在此记录客户的反馈结果；"
+            "系统按结果自动给出下一步动作建议，形成「触达 → 反馈 → 下一步」的闭环。"
         )
+        feedback_customer = st.selectbox("选择需回填结果的客户", [row["客户"] for row in results], key="feedback_customer")
         next_actions = {
             "已阅读，暂未响应": "7天后进入低频规则提醒队列，不直接触发产品推介。",
             "主动咨询，转人工服务": "生成服务工单，由经办人员在适当性边界内跟进。",
             "明确暂不参与": "记录拒绝原因并降低触达频率，避免重复打扰。",
             "完成缴存，进入长期服务": "进入年度缴存提醒与账户服务队列，不纳入短期唤醒名单。",
         }
-        st.info(f"{feedback_customer}：{next_actions[feedback_status]}")
+        feedback_status = st.radio(
+            "模拟触达结果（选择客户本次的反馈，系统据此给出下一步动作）",
+            list(next_actions.keys()),
+            horizontal=True,
+            key="feedback_status",
+        )
+        st.info(f"**{feedback_customer}** 的下一步动作：{next_actions[feedback_status]}")
         if st.button("写入模拟闭环记录", use_container_width=True):
             st.session_state.batch_feedback[feedback_customer] = {
                 "触达结果": feedback_status,
