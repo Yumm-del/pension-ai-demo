@@ -439,6 +439,10 @@ PAGE_GUIDES = {
 # ============================================================
 # 侧边栏
 # ============================================================
+# 跨页跳转：按钮先写入待跳转目标，这里在导航 widget 实例化【之前】应用
+if "_nav_target" in st.session_state:
+    st.session_state["nav"] = st.session_state.pop("_nav_target")
+
 with st.sidebar:
     st.markdown("""
     <div style="padding:1.1rem .3rem .9rem;border-bottom:2px solid #c7000b;">
@@ -458,7 +462,7 @@ with st.sidebar:
         "客户库",
         "🔒 合规中心",
         "🧮 税优计算器",
-    ], label_visibility="collapsed")
+    ], label_visibility="collapsed", key="nav")
 
     st.divider()
     st.markdown("### 使用指引")
@@ -616,7 +620,7 @@ if page == "📊 运营看板":
 # ============================================================
 elif page == "🔍 客户分型":
     st.markdown("## 客户休眠原因分析")
-    st.caption("规则先给出初步判断，LLM只补充原因说明，不改变规则结论。")
+    st.caption("规则引擎完成客户分型，大模型仅辅助解释，不干预分类结果。")
     st.divider()
 
     # 客户选择：支持搜索
@@ -694,27 +698,55 @@ elif page == "🔍 客户分型":
     st.markdown("### 画像辅助指标（原型推导）")
     interest_signal = 80 if any(word in customer["behavior"] for word in ["浏览", "咨询", "计算器"]) else 25
     caution_signal = {"保守型": 85, "稳健型": 60, "平衡型": 45, "进取型": 35}[customer["risk"]]
+    # 指标带简短注释（帮助客户经理一眼看懂分值含义）
     profile_data = pd.DataFrame({
+        "指标全称": [
+            "休眠程度｜分值越高，账户静止时间越长",
+            "近期兴趣信号｜主动咨询或浏览行为的活跃度",
+            "适当性关注｜风险与产品匹配的核验关注等级",
+        ],
         "指标": ["休眠程度", "近期兴趣信号", "适当性关注"],
         "指数": [min(100, round(customer["days_inactive"] / 365 * 100)), interest_signal, caution_signal],
-        "说明": [f"已沉睡 {customer['days_inactive']} 天", customer["behavior"], f"风险偏好：{customer['risk']}"]
+        "说明": [f"已沉睡 {customer['days_inactive']} 天", customer["behavior"], f"风险偏好：{customer['risk']}"],
+        # 配色语义：红=风险告警（休眠程度），蓝=中性信息（兴趣信号），橙=需关注（适当性）
+        "色": ["#c7000b", "#2E75D4", "#ED7D31"],
     })
     profile_chart = (
         alt.Chart(profile_data)
         .mark_bar(size=24, cornerRadiusEnd=3)
         .encode(
-            y=alt.Y("指标:N", sort=None, title=None, axis=alt.Axis(labelColor="#262626", labelFontSize=13)),
-            x=alt.X("指数:Q", scale=alt.Scale(domain=[0, 100]), title="原型辅助指数", axis=alt.Axis(labelColor="#262626", titleColor="#4b5563", gridColor="#e5e5e5")),
-            color=alt.value("#c7000b"),
-            tooltip=[alt.Tooltip("指标:N"), alt.Tooltip("指数:Q"), alt.Tooltip("说明:N")],
+            y=alt.Y("指标全称:N", sort=None, title=None,
+                    axis=alt.Axis(labelColor="#262626", labelFontSize=12,
+                                  labelLimit=260, labelPadding=6)),
+            x=alt.X("指数:Q", scale=alt.Scale(domain=[0, 100]), title="原型辅助指数",
+                    axis=alt.Axis(labelColor="#262626", titleColor="#4b5563", gridColor="#e5e5e5")),
+            color=alt.Color("指标:N", scale=alt.Scale(
+                domain=["休眠程度", "近期兴趣信号", "适当性关注"],
+                range=["#c7000b", "#2E75D4", "#ED7D31"]), legend=None),
+            tooltip=[alt.Tooltip("指标:N", title="指标"), alt.Tooltip("指数:Q", title="分值"),
+                     alt.Tooltip("说明:N", title="当前取值")],
         )
-        .properties(height=180)
+        .properties(height=200)
     )
     profile_labels = profile_chart.mark_text(align="left", baseline="middle", dx=7, color="#262626", fontSize=12).encode(text="指数:Q")
     st.altair_chart(profile_chart + profile_labels, use_container_width=True)
     st.caption("指数仅由当前模拟画像的休眠天数、行为文本与风险偏好换算，用于演示解释界面，不代表真实客户评分。")
 
-    st.caption("可在“客户触达策略”页查看候选内容和合规校验。")
+    st.divider()
+    st.markdown("#### 下一步")
+    _c1, _c2 = st.columns([3, 5])
+    with _c1:
+        if st.button("生成个性化触达话术 →", type="primary", use_container_width=True,
+                     key="goto_strategy"):
+            # 记录目标客户；跳转目标写入 _nav_target，由脚本开头统一应用
+            # （不能在 radio 实例化后直接改 session_state["nav"]）
+            st.session_state["strategy_customer"] = f"{customer['name']}（{customer['age']}岁 · 沉睡{customer['days_inactive']}天）"
+            st.session_state["_nav_target"] = "🤖 AI策略工场"
+            st.rerun()
+    with _c2:
+        st.caption("基于当前分型结果生成四渠道合规话术（企微 / 短信 / APP推送 / 电话）")
+
+    st.caption("也可在左侧导航直接进入「AI策略工场」查看候选内容与合规校验。")
 
 # ============================================================
 # 页面3：AI策略工场
