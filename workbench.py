@@ -124,10 +124,64 @@ def render_dashboard(pool, tasks):
         st.caption("分布仅统计180天未操作客群；不再用静态折线或预设转化率充当本次操作结果。")
 
 
+def render_indicators(customer):
+    """画像辅助指标：配色区分语义（红=风险 / 蓝=中性信号 / 橙=需关注）。
+    仅作沟通辅助，不作为动机推断依据——与分型规则的设计原则保持一致。"""
+    interest = 80 if any(w in customer["behavior"] for w in ["浏览", "咨询", "计算器"]) else 25
+    caution = {"保守型": 85, "稳健型": 60, "平衡型": 45, "进取型": 35}[customer["risk"]]
+    data = pd.DataFrame({
+        "指标全称": [
+            "休眠程度｜距上次养老金操作的时长",
+            "近期兴趣信号｜主动咨询或浏览的活跃度",
+            "适当性关注｜风险偏好对应的沟通审慎度",
+        ],
+        "指标": ["休眠程度", "近期兴趣信号", "适当性关注"],
+        "指数": [min(100, round(customer["days_inactive"] / 365 * 100)), interest, caution],
+        "说明": [f"已沉睡 {customer['days_inactive']} 天", customer["behavior"],
+                 f"风险偏好：{customer['risk']}"],
+    })
+    chart = (
+        alt.Chart(data)
+        .mark_bar(size=22, cornerRadiusEnd=3)
+        .encode(
+            y=alt.Y("指标全称:N", sort=None, title=None,
+                    axis=alt.Axis(labelColor="#262626", labelFontSize=11.5, labelLimit=250)),
+            x=alt.X("指数:Q", scale=alt.Scale(domain=[0, 100]), title="辅助指数",
+                    axis=alt.Axis(labelColor="#262626", titleColor="#4b5563", gridColor="#e5e5e5")),
+            color=alt.Color("指标:N", scale=alt.Scale(
+                domain=["休眠程度", "近期兴趣信号", "适当性关注"],
+                range=["#c7000b", "#2E75D4", "#ED7D31"]), legend=None),
+            tooltip=[alt.Tooltip("指标:N", title="指标"), alt.Tooltip("指数:Q", title="分值"),
+                     alt.Tooltip("说明:N", title="当前取值")],
+        )
+        .properties(height=190)
+    )
+    st.altair_chart(chart, use_container_width=True)
+    st.caption("三项指标仅用于提示沟通方式（何时联系、以何种重点沟通），"
+               "不用于推断缴存意愿或资金能力；客户真实原因以其反馈为准。")
+
+
+def render_channel_preview(customer):
+    """四渠道并排预览：展示同一成因在四个渠道的内容差异与共同限制。
+    仅作预览，不创建任务；正式内容仍须按渠道单独生成并审核。"""
+    import operations as op
+    st.markdown("#### 四渠道内容预览")
+    cols = st.columns(4)
+    for col, channel in zip(cols, ["企微", "短信", "APP推送", "电话"]):
+        body = op.candidate_body(customer, channel)
+        with col:
+            st.markdown(f"**{channel}**")
+            st.caption(body)
+            st.caption("✓ 含领取限制与风险提示")
+    st.caption("四个渠道均包含完整领取限制与风险提示；正式使用时按渠道单独生成任务并逐条人工审核。")
+
+
 def render_classification(pool, tasks):
     st.markdown("## 客户原因与服务依据")
     customer = select_customer(pool, "classification_picker")
     show_profile(customer)
+    st.divider()
+    render_indicators(customer)
     with st.expander("为什么采用这条规则？"):
         st.write("明确反馈优先；缺少反馈时，低知识测评仅提示认知可能不足，其余进入原因待确认。")
         st.write("收入高、年龄小、浏览多或领取过奖励均不能证明客户有可缴存资金或缺乏行动意愿。")
@@ -231,6 +285,8 @@ def render_strategy(pool, tasks, api_key):
     blocked = contact_block(customer)
     if blocked:
         st.warning(blocked)
+    with st.expander("查看四个渠道的内容差异（预览）", expanded=False):
+        render_channel_preview(customer)
     if st.button("生成候选话术", disabled=bool(blocked), type="primary"):
         task = new_task(customer, len(tasks) + 1, channel)
         # 可选 LLM 仅改写已批准范围内的模板，不发送身份信息、薪资或客户回访自由文本。
