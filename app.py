@@ -89,7 +89,10 @@ p,li { letter-spacing:.01em; }
 .stButton>button { background:var(--icbc-red); border:1px solid var(--icbc-red); border-radius:2px; color:#fff; font-weight:600; }
 .stButton>button:hover { background:var(--icbc-red-dark); border-color:var(--icbc-red-dark); color:#fff; }
 [data-testid="stMetric"] { background:#fff; border:1px solid var(--line); border-radius:4px; padding:.7rem .8rem; }
-[data-testid="stMetricLabel"], [data-testid="stCaptionContainer"] { color:var(--muted)!important; }
+[data-testid="stMetricLabel"] { color:#4b5563!important; }
+/* 说明文字加深：原 #6b7280 在白底上偏浅，评委/客户经理反映看不清 */
+[data-testid="stCaptionContainer"], [data-testid="stCaptionContainer"] * { color:#4b5563!important; }
+[data-testid="stExpander"] summary, [data-testid="stExpander"] summary * { color:#262626!important; }
 [data-testid="stMetric"] [data-testid="stMetricLabel"] *, [data-testid="stMetric"] [data-testid="stMetricValue"] *, [data-testid="stMetric"] [data-testid="stMetricDelta"] * { color:var(--ink)!important; opacity:1!important; }
 [data-testid="stAlert"] p, [data-testid="stAlert"] div { color:var(--ink)!important; opacity:1!important; }
 [data-testid="stDataFrame"] { border:1px solid var(--line); border-radius:4px; overflow:hidden; }
@@ -250,4 +253,9 @@ else:
     render_tax()
 
 st.divider()
-st.caption("原型 v4.0 · 已实现：规则分型、任务审核、模拟发送、回访留痕、税优简算。待接入：CRM、真实权限、生产归档与触达渠道。A/B经营效果待真实试点验证。")
+st.markdown(
+    '<div style="background:#f2f4f7;border-left:3px solid #c7000b;padding:.7rem 1rem;'
+    'border-radius:3px;color:#3f4652;font-size:.86rem;line-height:1.6;">'
+    '<b>原型能力边界</b>：已实现规则分型、任务审核、模拟发送、回访留痕、税优简算；'
+    '待接入 CRM、真实权限、生产归档与触达渠道。A/B 经营效果待真实试点验证。</div>',
+    unsafe_allow_html=True)

@@ -211,12 +211,31 @@ def render_history(task):
 def render_task(task, customer):
     st.markdown(f"### {task['id']} · {task['status']} · {task['channel']}")
     st.caption(f"生成时原因：{task['type']} · 来源：{task['source']}")
+
+    # 流程指引：让使用者知道当前处于哪一步、下一步做什么
+    if not task["sent"]:
+        if task["approval"]:
+            step_now = 3
+        elif check_content(text_of(task)):
+            step_now = 2
+        else:
+            step_now = 1
+        steps = ["① 编辑问候语", "② 规则预检", "③ 人工审核", "④ 模拟发送", "⑤ 回访记录"]
+        st.markdown(
+            "　".join(f"**{s}**" if i + 1 == step_now else s for i, s in enumerate(steps))
+            + f"　　**← 当前步骤：{steps[step_now - 1]}**"
+        )
+    elif not task["feedback"]:
+        st.markdown("① 编辑问候语　② 规则预检　③ 人工审核　④ 模拟发送　**⑤ 回访记录**"
+                    "　　**← 当前步骤：⑤ 回访记录**")
+    st.divider()
     if not task["sent"]:
         # 只开放问候语；规则正文、风险提示在服务端保存，不信任浏览器提交的锁定字段。
+        st.caption("可编辑范围：仅称呼与问候语。规则正文与风险提示由系统锁定，不可修改。")
         greeting = st.text_area("可编辑：称呼与问候语", value=task["greeting"], key=f"greeting_{task['id']}", height=80)
         st.text_area("规则正文与风险提示（锁定）", task["body"] + "\n" + task["locked"],
                      disabled=True, height=180, key=f"locked_{task['id']}")
-        if st.button("保存修改并重新预检", key=f"edit_{task['id']}"):
+        if st.button("保存修改并重新预检", key=f"edit_{task['id']}", help="修改问候语后点击此处保存；系统会重新执行规则预检"):
             try:
                 edit_greeting(task, greeting)
                 st.rerun()
@@ -256,9 +275,22 @@ def render_task(task, customer):
     elif not task["feedback"]:
         st.success("模拟发送已记录，未向任何真实客户发送消息。")
         st.markdown("#### 回访记录")
+        st.caption("选择本次联系结果与客户反馈的原因即可，无需手工撰写；"
+                   "如需补充细节可在下方备注中填写。")
         outcome = st.selectbox("本次联系结果", OUTCOMES, key=f"outcome_{task['id']}")
-        selected_type = st.selectbox("客户反馈的实际原因", TYPES, index=TYPES.index("原因待确认"), key=f"feedback_type_{task['id']}")
-        reason = st.text_area("反馈依据（仅填写模拟情景）", key=f"reason_{task['id']}")
+        selected_type = st.selectbox("客户反馈的实际原因", TYPES, index=TYPES.index("原因待确认"),
+                                     key=f"feedback_type_{task['id']}")
+        # 免手输：按所选原因给出标准依据模板，可直接采用
+        REASON_TEMPLATES = {
+            "规则认知不足": "客户表示对缴存与领取规则不清楚，需要规则解释",
+            "资金锁定顾虑": "客户担心资金长期锁定，希望了解领取条件后再决定",
+            "当前现金流受限": "客户表示近期支出较多，暂无闲置资金安排",
+            "参与流程受阻": "客户希望了解办理入口与操作步骤",
+            "原因待确认": "客户暂未说明具体原因，已记录本次联系结果",
+        }
+        default_reason = REASON_TEMPLATES.get(selected_type, "")
+        reason = st.text_input("反馈依据（已按所选原因自动填写，可修改）",
+                               value=default_reason, key=f"reason_input_{task['id']}_{selected_type}")
         next_date = None
         if outcome == "希望稍后联系":
             next_date = st.date_input("客户约定的下次联系日期", date.today() + timedelta(days=7),
@@ -320,27 +352,69 @@ def render_strategy(pool, tasks, api_key):
 
 
 def render_batch(pool, tasks):
+    """批量准备：一次生成多条草稿，在本页完成逐条审核，不打断批量节奏。"""
     st.markdown("## 批量准备任务")
+    st.caption("批量只生成**待审核草稿**；每条草稿仍须逐条人工审核后才能发送——"
+               "合规要求不允许批量审核、批量发送。")
+
+    # ---------- 第一步：选客户 ----------
+    st.markdown("#### ① 选择客户")
     candidates = [c for c in pool if c["days_inactive"] >= 180 and not contact_block(c)
                   and task_queue(c, tasks) == "待联系"]
     lookup = {c["id"]: c for c in candidates}
     ids = st.multiselect("选择客户（最多10位）", list(lookup),
                          format_func=lambda cid: f"{cid} · {lookup[cid]['name']} · {classify(lookup[cid])[0]}")
-    st.caption("仅纳入180天未操作、已同意触达且没有在途任务的客户。批量只生成草稿，每条均需单独审核。")
-    if st.button("批量生成待审核草稿", disabled=not ids or len(ids) > 10):
+    st.caption(f"可批量准备 {len(candidates)} 位客户（180 天未操作、已同意触达、无在途任务）。")
+    if st.button("批量生成待审核草稿", disabled=not ids or len(ids) > 10, type="primary"):
+        batch = []
         for cid in ids:
-            tasks.append(new_task(lookup[cid], len(tasks) + 1))
+            batch.append(new_task(lookup[cid], len(tasks) + 1))
+        tasks.extend(batch)
+        # 记住本批任务，便于下方集中审核
+        st.session_state["last_batch"] = [t["id"] for t in batch]
         st.rerun()
     if len(ids) > 10:
         st.warning("每批最多选择10位客户。")
-    if tasks:
-        st.dataframe([{"任务": t["id"], "客户ID": t["customer_id"], "客户": t["customer_name"],
-                       "成因": t["type"], "状态": t["status"]} for t in tasks], hide_index=True, use_container_width=True)
-        selected = st.selectbox("选择要处理的任务", [t["id"] for t in tasks])
-        if st.button("进入单客审核与回访 →"):
-            task = next(t for t in tasks if t["id"] == selected)
-            st.session_state[f"task_picker_{task['customer_id']}"] = selected
-            go("🤖 AI策略工场", task["customer_id"])
+
+    # ---------- 第二步：本批任务列表 ----------
+    if not tasks:
+        return
+    st.divider()
+    batch_ids = st.session_state.get("last_batch") or [t["id"] for t in tasks[-10:]]
+    # 只展示仍在流程中的任务（已完成回访的归入"已回访"，不占用批量视线）
+    batch_tasks = [t for t in tasks if t["id"] in batch_ids and t["status"] != "已回访"]
+    st.markdown(f"#### ② 本批任务（{len(batch_tasks)} 条待处理）")
+
+    reviewer = st.text_input("模拟审核人（批量审核时使用）", key="batch_reviewer",
+                             placeholder="如：演示审核员A")
+
+    for t in batch_tasks:
+        with st.container(border=True):
+            c1, c2 = st.columns([5, 2])
+            with c1:
+                st.markdown(f"**{t['id']} · {t['customer_name']}**　`{t['status']}`　|　{t['channel']}　|　{t['type']}")
+                st.caption(f"客户 {t['customer_id']} · {t['source']}")
+            with c2:
+                if t["status"] == "待审核":
+                    issues = check_content(text_of(t))
+                    if issues:
+                        st.error(f"预检未通过（{len(issues)} 项）", icon="⚠️")
+                    elif st.button("审核通过", key=f"ba_{t['id']}", use_container_width=True,
+                                   disabled=not reviewer.strip()):
+                        try:
+                            approve(t, reviewer)
+                            st.rerun()
+                        except ValueError as e:
+                            st.error(str(e))
+                elif t["status"] == "已审核":
+                    st.success("已审核", icon="✅")
+                if st.button("处理 / 查看 →", key=f"bv_{t['id']}", use_container_width=True):
+                    st.session_state[f"task_picker_{t['customer_id']}"] = t["id"]
+                    st.session_state["nav"] = "🤖 AI策略工场"
+                    st.session_state["selected_customer_id"] = t["customer_id"]
+                    st.rerun()
+
+    st.caption("审核通过后，可在「处理 / 查看」进入单客页面完成模拟发送与回访记录。")
 
 
 def render_library(pool, tasks):
@@ -395,7 +469,12 @@ def render_compliance(tasks):
 def render_tax():
     st.markdown("## 税优测算")
     st.caption("先算当年减税，再单独查看未来领取税与账户情景。")
-    mode = st.radio("输入方式", ["年应纳税所得额", "月薪简算"], horizontal=True)
+    mode = st.radio("输入方式", ["年应纳税所得额", "月薪简算"], horizontal=True,
+                    help="年应纳税所得额：已知个税 App 汇算结果时使用，最准确；"
+                         "月薪简算：已知税前月薪时使用，按 12 个月工资粗算")
+    st.caption("**两种输入方式的区别**："
+               "「年应纳税所得额」直接填写税务口径的年度金额，结果最准确；"
+               "「月薪简算」由月薪推算（月薪×12－6万－社保公积金等），适合与客户口头沟通时快速估算。")
     if mode == "年应纳税所得额":
         taxable = st.number_input("扣除个人养老金前的年应纳税所得额（元）", min_value=0.0, value=240000.0, step=1000.0)
         st.caption("填写已扣除基本减除费用、社保公积金、专项附加扣除等后的年度金额；本页仅演示综合所得。")
@@ -404,7 +483,8 @@ def render_tax():
         deductions = st.number_input("全年社保公积金、专项附加扣除等合计（元）", min_value=0.0, value=0.0, step=1000.0)
         taxable = max(0.0, salary * 12 - 60000 - deductions)
         st.caption(f"假设仅有12个月工资，扣除前年度应纳税所得额为 {taxable:,.2f} 元；未包含年终奖等情况。")
-    deposit = st.slider("用于测算的年度缴存额（元）", 0, 12000, 12000, 1000)
+    deposit = st.slider("用于测算的年度缴存额（元）", 0, 12000, 12000, 1000,
+                     help="个人养老金每年税前扣除上限为 12000 元；此处可拖动查看不同缴存额对应的节税金额")
     saved = tax_saving(taxable, deposit)
     a, b, c = st.columns(3)
     a.metric("当年预计减少税额", f"¥{saved:,.2f}")
