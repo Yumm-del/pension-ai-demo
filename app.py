@@ -120,6 +120,9 @@ with st.sidebar:
         st.caption("LLM仅接收固定规则模板正文，不发送客户身份信息或回访记录。留空可完成全部流程。")
         api_key = st.text_input("DeepSeek API Key（可选）", type="password", key="demo_api_key")
         st.caption("生成的候选正文仍需规则预检和模拟人工审核。")
+        st.checkbox("预置上一轮服务记录", value=True, key="seed_demo",
+                    help="开启后工作台自带一批已服务客户，状态分布贴近真实工作日；"
+                         "关闭则从空白开始，演示完整流程。")
     st.caption("模拟数据 · 未连接真实触达渠道")
     st.caption("任务在本次会话内保留，刷新或会话结束可能丢失；合规中心可导出留痕。")
     st.caption("吕滢滢 · 广东金融学院 · 第17届工行杯参赛作品")
@@ -131,6 +134,58 @@ if "tasks" not in st.session_state:
     st.session_state.tasks = []
 pool = st.session_state.customer_pool
 tasks = st.session_state.tasks
+
+# ============================================================
+# 演示初始态：预置上一轮的服务记录
+# ------------------------------------------------------------
+# 目的：让看板的状态分布贴近真实工作日，而不是"200 户全部待联系"。
+# 预置数据全部通过 operations 的真实接口生成（new_task → approve →
+# send_simulated → save_feedback），字段与正常操作完全一致，非手工构造。
+# 可通过侧边栏「演示设置」里的开关关闭，从空白状态演示完整流程。
+# ============================================================
+if "seeded" not in st.session_state:
+    st.session_state.seeded = True
+    if st.session_state.get("seed_demo", True) and len(tasks) == 0:
+        from operations import new_task, approve, send_simulated, save_feedback
+
+        # 上一轮已服务客户：(客户序号, 服务渠道, 回访结果, 客户反馈原因, 反馈依据)
+        seeded = [
+            (6,  "企微",   "已完成缴存",     "规则认知不足",   "客户理解规则后自主完成首次缴存"),
+            (7,  "短信",   "已完成缴存",     "当前现金流受限", "先按小额缴存，后续视资金情况调整"),
+            (8,  "企微",   "已联系",         "规则认知不足",   "客户表示已了解领取规则"),
+            (9,  "电话",   "未接通",         "原因待确认",     "两次拨打未接通，转入低频队列"),
+            (10, "APP推送", "希望稍后联系",   "资金锁定顾虑",   "客户希望在与家人商议后再决定"),
+            (11, "企微",   "需要规则解释",   "规则认知不足",   "客户希望了解税收扣除的办理方式"),
+            (12, "短信",   "暂不参与",       "资金锁定顾虑",   "客户明确表示暂不考虑长期锁定"),
+            (13, "企微",   "已联系",         "原因待确认",     "客户暂未说明具体原因"),
+        ]
+        for idx, (ci, channel, outcome, ftype, freason) in enumerate(seeded):
+            if ci >= len(pool):
+                break
+            c = pool[ci]
+            c["contact_allowed"] = True
+            t = new_task(c, idx + 1, channel)
+            approve(t, "演示审核员")
+            send_simulated(t, c)
+            if outcome != "未接通" and outcome != "希望稍后联系":
+                save_feedback(t, c, outcome, ftype, freason)
+            elif outcome == "希望稍后联系":
+                from datetime import date as _date, timedelta as _td
+                save_feedback(t, c, outcome, ftype, freason,
+                              (_date.today() + _td(days=7)).isoformat())
+            tasks.append(t)
+
+        # 另有 1 笔待人工审核、1 笔已发送待回访（演示"手上还有活"的状态）
+        for ci, channel in [(14, "企微"), (15, "电话")]:
+            if ci >= len(pool):
+                break
+            c = pool[ci]
+            c["contact_allowed"] = True
+            tasks.append(new_task(c, len(tasks) + 1, channel))
+        if len(tasks) >= 2 and len(pool) > 15:
+            # 倒数第二笔走完审核并发送（留在"待回访"）；最后一笔保持"待审核"
+            approve(tasks[-2], "演示审核员")
+            send_simulated(tasks[-2], pool[14])
 
 if page == "📊 运营看板":
     render_dashboard(pool, tasks)
